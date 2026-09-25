@@ -71,8 +71,8 @@ Each solver runs in an isolated Docker container with CTF tools pre-installed. S
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/ctf-agent.git
-cd ctf-agent
+git clone https://github.com/Md-Shamir-raza/ctf-agent-with-Live-Dashboard-UI.git
+cd ctf-agent-with-Live-Dashboard-UI
 
 # 2. Install dependencies
 uv sync
