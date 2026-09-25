@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CTF Agent — Real-time dashboard for autonomous multi-model CTF solver swarms">
+    <title>CTF Agent — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ─── Top Bar ───────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">CTF Agent</span>
+                <span class="logo-badge">LIVE</span>
+            </div>
+        </div>
+        <div class="topbar-center">
+            <div class="stat-chip" id="stat-solved">
+                <span class="stat-chip-icon">🏆</span>
+                <span class="stat-chip-value" id="solved-count">0</span>
+                <span class="stat-chip-label">Solved</span>
+            </div>
+            <div class="stat-chip" id="stat-unsolved">
+                <span class="stat-chip-icon">🎯</span>
+                <span class="stat-chip-value" id="unsolved-count">0</span>
+                <span class="stat-chip-label">Unsolved</span>
+            </div>
+            <div class="stat-chip" id="stat-swarms">
+                <span class="stat-chip-icon">🐝</span>
+                <span class="stat-chip-value" id="active-swarm-count">0</span>
+                <span class="stat-chip-label">Swarms</span>
+            </div>
+            <div class="stat-chip cost" id="stat-cost">
+                <span class="stat-chip-icon">💰</span>
+                <span class="stat-chip-value" id="total-cost">$0.00</span>
+                <span class="stat-chip-label">Cost</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="connection-status" id="ws-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+            <div class="uptime" id="uptime">00:00:00</div>
+        </div>
+    </header>
+
+    <!-- ─── Main Content ──────────────────────────────────────── -->
+    <main class="main-content">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <button class="nav-btn active" data-panel="overview" id="nav-overview">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Overview</span>
+            </button>
+            <button class="nav-btn" data-panel="challenges" id="nav-challenges">
+                <span class="nav-icon">🏁</span>
+                <span class="nav-label">Challenges</span>
+            </button>
+            <button class="nav-btn" data-panel="swarms" id="nav-swarms">
+                <span class="nav-icon">🐝</span>
+                <span class="nav-label">Swarms</span>
+            </button>
+            <button class="nav-btn" data-panel="costs" id="nav-costs">
+                <span class="nav-icon">💸</span>
+                <span class="nav-label">Costs</span>
+            </button>
+            <button class="nav-btn" data-panel="logs" id="nav-logs">
+                <span class="nav-icon">📜</span>
+                <span class="nav-label">Events</span>
+            </button>
+            <button class="nav-btn" data-panel="operator" id="nav-operator">
+                <span class="nav-icon">💬</span>
+                <span class="nav-label">Operator</span>
+            </button>
+        </nav>
+
+        <!-- Panel Container -->
+        <div class="panel-container">
+            <!-- ─── Overview Panel ────────────────────────────── -->
+            <section class="panel active" id="panel-overview">
+                <div class="panel-header">
+                    <h1>Competition Overview</h1>
+                    <span class="panel-subtitle" id="ctfd-url"></span>
+                </div>
+
+                <!-- Progress Ring -->
+                <div class="overview-hero">
+                    <div class="progress-ring-container">
+                        <svg class="progress-ring" viewBox="0 0 200 200">
+                            <circle class="progress-ring-bg" cx="100" cy="100" r="85" />
+                            <circle class="progress-ring-fill" cx="100" cy="100" r="85" id="progress-ring-fill" />
+                        </svg>
+                        <div class="progress-ring-text">
+                            <span class="progress-pct" id="progress-pct">0%</span>
+                            <span class="progress-label">Complete</span>
+                        </div>
+                    </div>
+                    <div class="overview-stats">
+                        <div class="overview-stat-card">
+                            <span class="stat-number" id="overview-total">0</span>
+                            <span class="stat-desc">Total Challenges</span>
+                        </div>
+                        <div class="overview-stat-card solved">
+                            <span class="stat-number" id="overview-solved">0</span>
+                            <span class="stat-desc">Solved</span>
+                        </div>
+                        <div class="overview-stat-card unsolved">
+                            <span class="stat-number" id="overview-unsolved">0</span>
+                            <span class="stat-desc">Remaining</span>
+                        </div>
+                        <div class="overview-stat-card">
+                            <span class="stat-number" id="overview-models">0</span>
+                            <span class="stat-desc">Models Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="section-title">Category Breakdown</div>
+                <div class="category-grid" id="category-grid"></div>
+
+                <!-- Recent Activity -->
+                <div class="section-title">Recent Activity</div>
+                <div class="activity-feed" id="activity-feed">
+                    <div class="activity-empty">Waiting for events...</div>
+                </div>
+            </section>
+
+            <!-- ─── Challenges Panel ──────────────────────────── -->
+            <section class="panel" id="panel-challenges">
+                <div class="panel-header">
+                    <h1>Challenges</h1>
+                    <div class="panel-controls">
+                        <div class="filter-group">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="solved">Solved</button>
+                            <button class="filter-btn" data-filter="unsolved">Unsolved</button>
+                            <button class="filter-btn" data-filter="active">Active</button>
+                        </div>
+                        <input type="text" class="search-input" id="challenge-search" placeholder="Search challenges...">
+                    </div>
+                </div>
+                <div class="challenge-grid" id="challenge-grid">
+                    <div class="loading-spinner">Loading challenges...</div>
+                </div>
+            </section>
+
+            <!-- ─── Swarms Panel ──────────────────────────────── -->
+            <section class="panel" id="panel-swarms">
+                <div class="panel-header">
+                    <h1>Active Swarms</h1>
+                    <button class="btn btn-refresh" id="btn-refresh-swarms">↻ Refresh</button>
+                </div>
+                <div class="swarm-grid" id="swarm-grid">
+                    <div class="loading-spinner">Loading swarms...</div>
+                </div>
+            </section>
+
+            <!-- ─── Costs Panel ───────────────────────────────── -->
+            <section class="panel" id="panel-costs">
+                <div class="panel-header">
+                    <h1>Cost Tracker</h1>
+                </div>
+                <div class="cost-summary" id="cost-summary">
+                    <div class="cost-hero-card">
+                        <span class="cost-hero-value" id="cost-hero-total">$0.00</span>
+                        <span class="cost-hero-label">Total Spend</span>
+                    </div>
+                    <div class="cost-hero-card">
+                        <span class="cost-hero-value" id="cost-hero-tokens">0</span>
+                        <span class="cost-hero-label">Total Tokens</span>
+                    </div>
+                </div>
+                <div class="section-title">By Model</div>
+                <div class="cost-table-container" id="cost-by-model"></div>
+                <div class="section-title">By Agent</div>
+                <div class="cost-table-container" id="cost-by-agent"></div>
+            </section>
+
+            <!-- ─── Events Panel ──────────────────────────────── -->
+            <section class="panel" id="panel-logs">
+                <div class="panel-header">
+                    <h1>Event Log</h1>
+                    <button class="btn btn-clear" id="btn-clear-events">Clear</button>
+                </div>
+                <div class="event-log" id="event-log">
+                    <div class="activity-empty">Waiting for events...</div>
+                </div>
+            </section>
+
+            <!-- ─── Operator Panel ────────────────────────────── -->
+            <section class="panel" id="panel-operator">
+                <div class="panel-header">
+                    <h1>Operator Console</h1>
+                </div>
+                <div class="operator-description">
+                    Send hints or instructions to the coordinator and running solver agents.
+                </div>
+                <div class="operator-form">
+                    <textarea id="operator-message" class="operator-textarea" placeholder="Type your message to the coordinator...&#10;&#10;Examples:&#10;• Focus on the 'crypto-rsa' challenge, it uses weak RSA keys&#10;• Try SQL injection on the login page&#10;• The flag format is CTF{...}"></textarea>
+                    <button class="btn btn-send" id="btn-send-message">
+                        <span>Send Message</span>
+                        <span class="btn-icon">→</span>
+                    </button>
+                </div>
+                <div class="section-title">Message History</div>
+                <div class="message-history" id="message-history">
+                    <div class="activity-empty">No messages sent yet.</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ─── Solver Detail Modal ───────────────────────────────── -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Solver Trace</h2>
+                <button class="modal-close" id="modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <pre class="trace-content" id="modal-trace"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
